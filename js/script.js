@@ -92,7 +92,7 @@ window.addEventListener("DOMContentLoaded", () => {
     updateClock();
 
     // функция, которая непосредственно вставляет нужные цифры таймера в разметку
-    // и поего истечению сбрасывает таймер
+    // и по его истечению сбрасывает таймер
     function updateClock() {
       const t = getTimeRemaining(endtime);
 
@@ -116,35 +116,57 @@ window.addEventListener("DOMContentLoaded", () => {
 
   //!MODAL WINDOW
 
+  // Получаем элементы со страницы для дальнейшей работы
   const modalTrigger = document.querySelectorAll("[data-modal]"),
     modal = document.querySelector(".modal"),
     modalCloseBtn = modal.querySelector("[data-close]");
 
+  function openModal() {
+    modal.classList.add("show", "fade");
+    modal.classList.remove("hide");
+    document.body.style.overflow = "hidden";
+    clearInterval(modalTimerId);
+  }
+
+  // Вешаем на все кнопки для вызова модального окна обработчик для события КЛИК и
+  // показываем модальное окно, а так же отменяем прокрутку страницы
   modalTrigger.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      modal.classList.add("show", "fade");
-      modal.classList.remove("hide");
-      document.body.style.overflow = "hidden";
-    });
+    btn.addEventListener("click", openModal);
   });
 
+  // Функция для скрытия модального окна, а так же для восстановления возможности скролла страницы
   function closeModal() {
     modal.classList.add("hide");
     modal.classList.remove("show", "fade");
     document.body.style.overflow = "";
   }
 
+  // Обработчик для события КЛИК крестика модального окна(закрытие)
   modalCloseBtn.addEventListener("click", closeModal);
 
+  // Обработчик для события КЛИЕ класса modal для сокрытия модального окна при клике на свободную область сайта
   modal.addEventListener("click", (event) => {
     if (event.target === modal) {
       closeModal();
     }
   });
 
+  // Вешаем на весь документ обработчик для события НАЖАТИЕ КЛАВИШИ ВНИЗ, если модальное окно открыто
+  // и нажата клавиша ESC - скрываем модальное окно
   document.addEventListener("keydown", (event) => {
     if (event.code === "Escape" && modal.classList.contains("show")) {
       closeModal();
     }
   });
+
+  const modalTimerId = setTimeout(openModal, 3000);
+
+  function showModalByScroll() {
+    if (window.pageYOffset + document.documentElement.clientHeight >= document.documentElement.scrollHeight) {
+      openModal();
+      window.removeEventListener("scroll", showModalByScroll);
+    }
+  }
+
+  window.addEventListener("scroll", showModalByScroll);
 });
