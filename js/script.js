@@ -50,7 +50,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   //!TIMER//
   // Задаем дату окончания таймера
-  const deadline = "2021-02-09";
+  const deadline = "2021-02-10";
 
   // Функция для рассчета разницы между дедлайном и СЕЙЧАС
   // из этого timestamp получаем дни, часы, минуты и секунды, возвращаем все в виде объекта
@@ -103,9 +103,48 @@ window.addEventListener("DOMContentLoaded", () => {
 
       if (t.total <= 0) {
         clearInterval(timerId);
+
+        days.textContent = "00";
+        hours.textContent = "00";
+        minutes.textContent = "00";
+        seconds.textContent = "00";
       }
     }
   }
 
   setClock(".timer", "#days", "#hours", "#minutes", "#seconds", deadline);
+
+  //!MODAL WINDOW
+
+  const modalTrigger = document.querySelectorAll("[data-modal]"),
+    modal = document.querySelector(".modal"),
+    modalCloseBtn = modal.querySelector("[data-close]");
+
+  modalTrigger.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      modal.classList.add("show", "fade");
+      modal.classList.remove("hide");
+      document.body.style.overflow = "hidden";
+    });
+  });
+
+  function closeModal() {
+    modal.classList.add("hide");
+    modal.classList.remove("show", "fade");
+    document.body.style.overflow = "";
+  }
+
+  modalCloseBtn.addEventListener("click", closeModal);
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.code === "Escape" && modal.classList.contains("show")) {
+      closeModal();
+    }
+  });
 });
