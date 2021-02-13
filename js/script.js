@@ -171,26 +171,38 @@ window.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("scroll", showModalByScroll);
 
   //!MENU Используем классы для карточек
+  // Создаем класс-шаблон для карточек меню
   class MenuCard {
-    constructor(src, alt, title, descr, price, parentSelector) {
+    constructor(src, alt, title, descr, price, parentSelector, ...classes) {
       this.src = src;
       this.alt = alt;
       this.title = title;
       this.descr = descr;
       this.price = price;
       this.parent = document.querySelector(parentSelector);
+      this.classes = classes;
       this.transfer = 74;
       this.convertToRub();
     }
 
+    // Функция для перевода долларов в рубли
     convertToRub() {
       this.price *= this.transfer;
     }
 
+    // метод для отрисовки в разметку карточки
+    // создаем div, навешиваем нудные классы(...classes)
     render() {
       const element = document.createElement("div");
+
+      if (this.classes.length === 0) {
+        this.element = "menu__item";
+        element.classList.add(this.element);
+      } else {
+        this.classes.forEach((className) => element.classList.add(className));
+      }
+      // Сама разметка блока
       element.innerHTML = `
-      <div class="menu__item">
         <img src=${this.src} alt=${this.alt}>
         <h3 class="menu__item-subtitle">${this.title}</h3>
         <div class="menu__item-descr">${this.descr}</div>
@@ -199,13 +211,13 @@ window.addEventListener("DOMContentLoaded", () => {
           <div class="menu__item-cost">Цена:</div>
           <div class="menu__item-total"><span>${this.price}</span> руб/день</div>
         </div>
-      </div>
       `;
-
+      //Добавляем в конец родительского элемента(element)
       this.parent.append(element);
     }
   }
 
+  // Создаем по шаблону 3 карточки
   new MenuCard(
     "img/tabs/vegy.jpg",
     "vegy",
@@ -230,6 +242,77 @@ window.addEventListener("DOMContentLoaded", () => {
     'Меню "Постное"',
     "Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.",
     21,
-    ".menu .container"
+    ".menu .container",
+    "menu__item"
   ).render();
+
+  //!FORMS
+  // Получаем псевдомассив со всеми элементами - форма
+  const forms = document.querySelectorAll("form");
+
+  // Создаем вспомогательный объект - для хранения сообщений пользователю по состоянию отпраки данных на сервер
+  const messages = {
+    loaded: "Загрузка",
+    success: "Спасибо за ваше обращение! Мы скоро с вами свяжемся",
+    failure: "Что-то пошло не так...",
+  };
+
+  // Перебираем псевдомассив со всеми формами и вызываем функцию с обработчиком на каждую
+  forms.forEach((form) => {
+    postDate(form);
+  });
+
+  // функция , содержащая вызов обработчика для события - ОТПРАВКА ФОРМЫ для формы (form)
+  function postDate(form) {
+    // Вешаем сам обработчик на форму
+    form.addEventListener("submit", (event) => {
+      // Обязательно сбрасываем поведение по умолчанию, чтобы страница не перезагружалась при отправке формы
+      event.preventDefault();
+
+      // Создаем блок с сообщением пользователю, вешаем на него класс,
+      // добавляем само сообщение и добавляем в конец формы
+      const statusMessage = document.createElement("div");
+      statusMessage.classList.add("status");
+      statusMessage.textContent = messages.loaded;
+      form.append(statusMessage);
+
+      // Создаем объект,который даёт возможность делать HTTP-запросы к серверу без перезагрузки страницы.
+      const request = new XMLHttpRequest();
+
+      // Указываем метод запроса и адрес сервера
+      request.open("POST", "server.php");
+      request.setRequestHeader("Content-type", "application/json; charset=utf-8"); //?для JSON обязательно заголовки
+      // Создаем объект formDate, объект хранит все данные из формы в себе
+      const formDate = new FormData(form);
+
+      //?Чтобы переделать объект(на самом деле не совсем объект) formDate в JSON делаем следующее:
+      //? Сначала создаем именно ОБЪЕКТ из массивоподобного formDate, потом форматируем в JSON
+      const obj = {};
+      formDate.forEach((value, key) => {
+        obj[key] = value;
+      });
+
+      const json = JSON.stringify(obj);
+
+      // request.send(formDate);// Отправляем данные в виде объекта formDate
+      request.send(json); //?Отправляем данные в формате JSON
+
+      // Вешаем обработчик события LOAD(полыный цикл пермещение данных клиент-сервер-клиент) на request
+      request.addEventListener("load", () => {
+        // Если ответ от сервера - УСПЕШНО то выводим соответствующее сообщение в блок
+        // очищаем форму, и устанавливаем таймер, котоырй через 3 секунды удалит блок с сообщениями
+        if (request.status === 200) {
+          console.log(request.response);
+          statusMessage.textContent = messages.success;
+          form.reset();
+          setTimeout(() => {
+            statusMessage.remove();
+          }, 3000);
+          // В противном случае выводим сообщение об ошибке в блок с сообщениями
+        } else {
+          statusMessage.textContent = messages.failure;
+        }
+      });
+    });
+  }
 });
