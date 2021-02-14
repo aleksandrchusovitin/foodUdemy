@@ -141,12 +141,10 @@ window.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "";
   }
 
-  // Обработчик для события КЛИК крестика модального окна(закрытие)
-  modalCloseBtn.addEventListener("click", closeModal);
-
-  // Обработчик для события КЛИЕ класса modal для сокрытия модального окна при клике на свободную область сайта
+  // Обработчик для события КЛИК класса modal для сокрытия модального окна при клике на свободную область сайта
+  // или при клике на закрывающий крестик
   modal.addEventListener("click", (event) => {
-    if (event.target === modal) {
+    if (event.target === modal || event.target.getAttribute("data-close") == "") {
       closeModal();
     }
   });
@@ -251,8 +249,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const forms = document.querySelectorAll("form");
 
   // Создаем вспомогательный объект - для хранения сообщений пользователю по состоянию отпраки данных на сервер
+  // Так же храним здесь картинку для отображения статуса загрузки
   const messages = {
-    loaded: "Загрузка",
+    loaded: "img/forms/spinner.svg",
     success: "Спасибо за ваше обращение! Мы скоро с вами свяжемся",
     failure: "Что-то пошло не так...",
   };
@@ -269,12 +268,15 @@ window.addEventListener("DOMContentLoaded", () => {
       // Обязательно сбрасываем поведение по умолчанию, чтобы страница не перезагружалась при отправке формы
       event.preventDefault();
 
-      // Создаем блок с сообщением пользователю, вешаем на него класс,
-      // добавляем само сообщение и добавляем в конец формы
-      const statusMessage = document.createElement("div");
-      statusMessage.classList.add("status");
-      statusMessage.textContent = messages.loaded;
-      form.append(statusMessage);
+      // Создаем блок img с картинкой прогресса загрузки,
+      // адрес картинки и стили, добавляем после конца формы
+      const statusMessage = document.createElement("img");
+      statusMessage.src = messages.loaded;
+      statusMessage.style.cssText = `
+        display: block;
+        margin: 0 auto;
+      `;
+      form.insertAdjacentElement("afterend", statusMessage);
 
       // Создаем объект,который даёт возможность делать HTTP-запросы к серверу без перезагрузки страницы.
       const request = new XMLHttpRequest();
@@ -299,20 +301,47 @@ window.addEventListener("DOMContentLoaded", () => {
 
       // Вешаем обработчик события LOAD(полыный цикл пермещение данных клиент-сервер-клиент) на request
       request.addEventListener("load", () => {
-        // Если ответ от сервера - УСПЕШНО то выводим соответствующее сообщение в блок
-        // очищаем форму, и устанавливаем таймер, котоырй через 3 секунды удалит блок с сообщениями
+        // Если ответ от сервера - УСПЕШНО то выводим соответствующее сообщение в модальное окно
+        // очищаем форму
         if (request.status === 200) {
           console.log(request.response);
-          statusMessage.textContent = messages.success;
+          showThanksModal(messages.success);
           form.reset();
-          setTimeout(() => {
-            statusMessage.remove();
-          }, 3000);
-          // В противном случае выводим сообщение об ошибке в блок с сообщениями
+          // В противном случае показываем модальное окно с ошибкой
         } else {
-          statusMessage.textContent = messages.failure;
+          showThanksModal(messages.failure);
         }
       });
     });
+  }
+
+  // Функция для создания и показа модального окна с сообщениями о статусе запроса к серверу(отправки данных)
+  function showThanksModal(message) {
+    // Запоминаем стандарное модальное окно
+    const prevModalDialog = document.querySelector(".modal__dialog");
+    //скрываем его и открываем подложку для нового модального окна
+    prevModalDialog.classList.add("hide");
+    openModal();
+
+    // Создаем новое модальное окно, вешаем соотвествующий класс и добавляем в разметку
+    const thanksModal = document.createElement("div");
+    thanksModal.classList.add("modal__dialog");
+    thanksModal.innerHTML = `
+      <div data-close class="modal__content">
+        <div class="modal__close"></div>
+        <div class="modal__title">${message}</div>
+      </div>
+    `;
+
+    document.querySelector(".modal").append(thanksModal);
+
+    // Устанавливаем таймер, через 4 сек новое модальное окно удаляем, стандартное возвращаем классами(показываем)
+    // И закрываем подложку
+    setTimeout(() => {
+      thanksModal.remove();
+      prevModalDialog.classList.add("show", "fade");
+      prevModalDialog.classList.remove("hide");
+      closeModal();
+    }, 4000);
   }
 });
