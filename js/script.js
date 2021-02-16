@@ -279,11 +279,12 @@ window.addEventListener("DOMContentLoaded", () => {
       form.insertAdjacentElement("afterend", statusMessage);
 
       // Создаем объект,который даёт возможность делать HTTP-запросы к серверу без перезагрузки страницы.
-      const request = new XMLHttpRequest();
+      //!(устаревший метод)
+      // const request = new XMLHttpRequest();
 
       // Указываем метод запроса и адрес сервера
-      request.open("POST", "server.php");
-      request.setRequestHeader("Content-type", "application/json; charset=utf-8"); //?для JSON обязательно заголовки
+      // request.open("POST", "server.php");
+      // request.setRequestHeader("Content-type", "application/json; charset=utf-8"); //?для JSON обязательно заголовки
       // Создаем объект formDate, объект хранит все данные из формы в себе
       const formDate = new FormData(form);
 
@@ -294,24 +295,44 @@ window.addEventListener("DOMContentLoaded", () => {
         obj[key] = value;
       });
 
-      const json = JSON.stringify(obj);
+      // const json = JSON.stringify(obj);
+
+      // Современный метод через fetch(путем промисов)
+      fetch("server.php", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(obj),
+      })
+        .then((date) => date.text())
+        .then((date) => {
+          console.log(date);
+          showThanksModal(messages.success);
+        })
+        .catch(() => {
+          showThanksModal(messages.failure);
+        })
+        .finally(() => {
+          form.reset();
+        });
 
       // request.send(formDate);// Отправляем данные в виде объекта formDate
-      request.send(json); //?Отправляем данные в формате JSON
+      // request.send(json); //?Отправляем данные в формате JSON
 
       // Вешаем обработчик события LOAD(полыный цикл пермещение данных клиент-сервер-клиент) на request
-      request.addEventListener("load", () => {
-        // Если ответ от сервера - УСПЕШНО то выводим соответствующее сообщение в модальное окно
-        // очищаем форму
-        if (request.status === 200) {
-          console.log(request.response);
-          showThanksModal(messages.success);
-          form.reset();
-          // В противном случае показываем модальное окно с ошибкой
-        } else {
-          showThanksModal(messages.failure);
-        }
-      });
+      // request.addEventListener("load", () => {
+      //   // Если ответ от сервера - УСПЕШНО то выводим соответствующее сообщение в модальное окно
+      //   // очищаем форму
+      //   if (request.status === 200) {
+      //     console.log(request.response);
+      //     showThanksModal(messages.success);
+      //     form.reset();
+      //     // В противном случае показываем модальное окно с ошибкой
+      //   } else {
+      //     showThanksModal(messages.failure);
+      //   }
+      // });
     });
   }
 
