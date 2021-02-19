@@ -215,34 +215,49 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Функция для get запроса к серверу и получению объекта + проверка на успешность и выброс ошибки
+  // в случае неудачи(напр. ошибка сервера 500)
+  const getResource = async (url) => {
+    let res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`Ошибка при запросе к базе данных по адресу ${url}. Статус ошибки: ${res.status}`);
+    }
+
+    return await res.json();
+  };
+
   // Создаем по шаблону 3 карточки
-  new MenuCard(
-    "img/tabs/vegy.jpg",
-    "vegy",
-    'Меню "Фитнес"',
-    'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-    9,
-    ".menu .container"
-  ).render();
+  getResource("http://localhost:3000/menu").then((obj) => {
+    obj.forEach(({ img, altimg, title, descr, price }) => {
+      new MenuCard(img, altimg, title, descr, price, ".menu .container").render();
+    });
+  });
 
-  new MenuCard(
-    "img/tabs/elite.jpg",
-    "elite",
-    "Меню “Премиум”",
-    "В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!",
-    14,
-    ".menu .container"
-  ).render();
+  // ? Способ добавления карточек БЕЗ шаблонизации(когда нам нужно один раз отрисовать в верстке и все)
+  // getResource("http://localhost:3000/menu")
+  //   .then(data => getCard(data));
 
-  new MenuCard(
-    "img/tabs/post.jpg",
-    "post",
-    'Меню "Постное"',
-    "Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.",
-    21,
-    ".menu .container",
-    "menu__item"
-  ).render();
+  // function getCard(data) {
+  //   data.forEach(({ img, altimg, title, descr, price }) => {
+  //     price *= 74;
+
+  //     const element = document.createElement('div');
+  //     element.classList.add('menu__item');
+
+  //     element.innerHTML = `
+  //     <img src=${img} alt=${altimg}>
+  //     <h3 class="menu__item-subtitle">${title}</h3>
+  //     <div class="menu__item-descr">${descr}</div>
+  //     <div class="menu__item-divider"></div>
+  //     <div class="menu__item-price">
+  //       <div class="menu__item-cost">Цена:</div>
+  //       <div class="menu__item-total"><span>${price}</span> руб/день</div>
+  //     </div>
+  //     `;
+  //     document.querySelector('.menu .container').append(element);
+  //   });
+  // }
 
   //!FORMS
   // Получаем псевдомассив со всеми элементами - форма
@@ -258,11 +273,24 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Перебираем псевдомассив со всеми формами и вызываем функцию с обработчиком на каждую
   forms.forEach((form) => {
-    postDate(form);
+    bindPostDate(form);
   });
 
+  // Функция для настройки запроса к серверу, метод, заголовки, тело(пока только для json формата)
+  const postDate = async (url, data) => {
+    let res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json; charset=utf-8",
+      },
+      body: data,
+    });
+
+    return await res.json();
+  };
+
   // функция , содержащая вызов обработчика для события - ОТПРАВКА ФОРМЫ для формы (form)
-  function postDate(form) {
+  function bindPostDate(form) {
     // Вешаем сам обработчик на форму
     form.addEventListener("submit", (event) => {
       // Обязательно сбрасываем поведение по умолчанию, чтобы страница не перезагружалась при отправке формы
@@ -288,28 +316,26 @@ window.addEventListener("DOMContentLoaded", () => {
       // Создаем объект formDate, объект хранит все данные из формы в себе
       const formDate = new FormData(form);
 
-      //?Чтобы переделать объект(на самом деле не совсем объект) formDate в JSON делаем следующее:
-      //? Сначала создаем именно ОБЪЕКТ из массивоподобного formDate, потом форматируем в JSON
-      const obj = {};
-      formDate.forEach((value, key) => {
-        obj[key] = value;
-      });
+      // //?Чтобы переделать объект(на самом деле не совсем объект) formDate в JSON делаем следующее:
+      // //? Сначала создаем именно ОБЪЕКТ из массивоподобного formDate, потом форматируем в JSON
+      // const obj = {};
+      // formDate.forEach((value, key) => {
+      //   obj[key] = value;
+      // });
+
+      // !Более элегантный способ сделать из formDate - JSON
+      // Сначала делаем из fromdate массив массиво с помощью entries(). Потом с помощью Objec.frometries делаем объект
+      // из него и преобразуем этот объект в JSON
+      const json = JSON.stringify(Object.fromEntries(formDate.entries()));
 
       // const json = JSON.stringify(obj);
 
       // Современный метод через fetch(путем промисов)
-      fetch("server.php", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json; charset=utf-8",
-        },
-        body: JSON.stringify(obj),
-      })
-        .then((date) => date.text())
+      postDate("http://localhost:3000/requests", json)
         .then((date) => {
           console.log(date);
           showThanksModal(messages.success);
-          statusMessage.remove();// !проверить строчку
+          statusMessage.remove(); // !проверить строчку
         })
         .catch(() => {
           showThanksModal(messages.failure);
@@ -366,8 +392,4 @@ window.addEventListener("DOMContentLoaded", () => {
       closeModal();
     }, 4000);
   }
-
-  fetch('http://localhost:3000/menu')
-    .then(data => data.json())
-    .then(res => console.log(res));
 });
