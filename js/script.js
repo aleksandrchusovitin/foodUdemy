@@ -309,6 +309,7 @@ window.addEventListener("DOMContentLoaded", () => {
         .then((date) => {
           console.log(date);
           showThanksModal(messages.success);
+          statusMessage.remove();// !проверить строчку
         })
         .catch(() => {
           showThanksModal(messages.failure);
@@ -365,4 +366,8 @@ window.addEventListener("DOMContentLoaded", () => {
       closeModal();
     }, 4000);
   }
+
+  fetch('http://localhost:3000/menu')
+    .then(data => data.json())
+    .then(res => console.log(res));
 });
