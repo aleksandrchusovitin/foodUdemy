@@ -234,6 +234,13 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // ! Тоже самое что сверху - но с использованием библиотеки axios
+  // axios.get("http://localhost:3000/menu").then((data) => {
+  //   data.data.forEach(({ img, altimg, title, descr, price }) => {
+  //     new MenuCard(img, altimg, title, descr, price, ".menu .container").render();
+  //   });
+  // });
+
   // ? Способ добавления карточек БЕЗ шаблонизации(когда нам нужно один раз отрисовать в верстке и все)
   // getResource("http://localhost:3000/menu")
   //   .then(data => getCard(data));
