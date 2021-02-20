@@ -399,4 +399,115 @@ window.addEventListener("DOMContentLoaded", () => {
       closeModal();
     }, 4000);
   }
+
+  // ! Slider
+  const sliderCounter = document.querySelector(".offer__slider-counter"),
+    currentCounter = sliderCounter.querySelector("#current"),
+    totalCounter = sliderCounter.querySelector("#total"),
+    prevArrow = sliderCounter.querySelector(".offer__slider-prev"),
+    nextArrow = sliderCounter.querySelector(".offer__slider-next"),
+    slides = document.querySelectorAll(".offer__slide");
+
+  // * Мой убогий вариант
+  // const countSlides = slides.length;
+  // let currentIndex = +currentCounter.textContent;
+
+  // function hideSlides() {
+  //   slides.forEach((slide) => {
+  //     slide.classList.add("hide");
+  //     slide.classList.remove("show", "fade");
+  //   });
+  // }
+
+  // hideSlides();
+
+  // function showSlide(slide, slideIndex) {
+  //   totalCounter.textContent = countSlides < 10 ? `0${countSlides}` : countSlides;
+  //   currentCounter.textContent = slideIndex < 10 ? `0${slideIndex}` : slideIndex;
+
+  //   slide.classList.add("show", "fade");
+  //   slide.classList.remove("hide");
+  // }
+
+  // showSlide(slides[currentIndex - 1], currentIndex);
+
+  // sliderCounter.addEventListener("click", (event) => {
+  //   const target = event.target;
+  //   console.log(target);
+
+  //   if (target === prevArrow || target === sliderCounter.querySelector(".offer__slider-prev img")) {
+  //     currentIndex--;
+  //     if (currentIndex < 1) {
+  //       currentIndex = countSlides;
+  //     }
+  //   } else if (target === nextArrow || target === sliderCounter.querySelector(".offer__slider-next img")) {
+  //     currentIndex++;
+  //     if (currentIndex > countSlides) {
+  //       currentIndex = 1;
+  //     }
+  //   }
+
+  //   hideSlides();
+  //   showSlide(slides[currentIndex - 1], currentIndex);
+  // });
+
+  //* Вариант с урока
+
+  // Берем начальынй индекс за 1
+  let slideIndex = 1;
+
+  // Скрываем все слайды из разметки и показываем первый
+  showSlides(slideIndex);
+
+  // Устанавливаем в разметку общее количество слайдов(берем из массива слайдов)
+  // Плюс форматируем под нули(01, 02, 03)
+  if (slides.length < 10) {
+    totalCounter.textContent = `0${slides.length}`;
+  } else {
+    totalCounter.textContent = slides.length;
+  }
+
+  // Основная функция для показа слайдов
+  function showSlides(n) {
+    // Механика для переполнения(если слайдов 4 всего, то когда достигаем 4 и листаем дальше -становится снова индекс 1
+    // и так же в другую сторону 0-4)
+    if (n > slides.length) {
+      slideIndex = 1;
+    }
+
+    if (n < 1) {
+      slideIndex = slides.length;
+    }
+
+    // Перебираем псевдомассив со слайдами и все скрываем
+    slides.forEach((slide) => {
+      slide.classList.add("hide");
+      slide.classList.remove("show", "fade");
+    });
+
+    // Показываем сладер с индексом slideIndex - 1(так как начинаем с 1 для удобочитаемости юзера)
+    slides[slideIndex - 1].classList.add("show", "fade");
+    slides[slideIndex - 1].classList.remove("hide");
+
+    // Устанавливаем в разметку текущий номер слайдера(так же с форматированием)
+    if (slideIndex < 10) {
+      currentCounter.textContent = `0${slideIndex}`;
+    } else {
+      currentCounter.textContent = slideIndex;
+    }
+  }
+
+  // Функция для (плюс/минус 1) от индекса
+  function plusSlides(n) {
+    showSlides((slideIndex += n));
+  }
+
+  // Вешаем обработчики событий на стрелочки и вызываем функцию (плюс/минус 1) от индекса
+  prevArrow.addEventListener("click", () => {
+    plusSlides(-1);
+  });
+
+  nextArrow.addEventListener("click", () => {
+    plusSlides(1);
+  });
 });
